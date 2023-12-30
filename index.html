@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>SL PORTAL</title>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/css/materialize.css'>
+    <link rel="stylesheet" href="./style.css">
+    <script>
+        if (! localStorage.getItem('token')) {
+            window.location.href = "log_in.html";
+        }
+    </script>
+    <script src="https://kit.fontawesome.com/94d83a8e90.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <!-- partial:index.partial.html -->
+    <html>
+
+    <head>
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- include material design icons -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    </head>
+
+    <body>
+
+        <header class="header-box">
+            <h2>SL Portal</h2>
+            <button class="logout-button" id="logout">Logout</button>
+        </header>
+
+        <div class="container" ng-app="myApp" ng-controller="slCtrl">
+            <div class="row">
+                <div class="input-field col s8 nopad">
+                    <input type="text" ng-model="search" class="form-control" placeholder="Search..." />
+                </div>
+                <div class="sidebar">
+                    <a ng-repeat="item in fieldTable" ng-href="#" ng-click="selectItem(item)" ng-class="{ 'selected': selectedItem === item }">{{item.title}}</a>
+                </div>
+                <div class="content">
+                    <h2>{{selectedItem.title}}</h2>
+                    <p>{{selectedItem.field}}</p>
+                </div>
+            </div>
+            <div id="email-list" class="modal">
+                <div class="modal-content">
+                    <div class="row">
+                        <b class="theEmails" ng-repeat="d in filteredNames = (names | filter:filters | filter:search)">{{d.email}}{{$last ? '' : ', '}}</b>
+                    </div>
+                </div>
+            </div>
+            <a ng-init="getEmails()" ng-href="mailto:{{list}}" target="_blank"
+                class="waves-effect waves-light btn margin-bottom-1em custom-margin link-custom-color">
+                <i class="material-icons left">mail</i> Send Invitation to all {{selected.field}}
+                ({{filteredNames.length}})
+            </a>
+            <a href="#email-list"
+                class="modal-trigger waves-effect waves-light btn margin-bottom-1em custom-margin link-custom-color"> <i
+                    class="material-icons left">mail</i>
+                View List of Email ({{filteredNames.length}})
+            </a>
+            <br>
+
+            <!-- table that shows volunteer record list -->
+            <div style="min-width: 50px;" class="input-field col s1 ">
+                <div ng-show="showSelect">
+                    <select name="resultlimit" ng-model="resultlimit" ng-init="resultlimit=5">
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="sorter">
+                <h6 style="display: inline-block;">Order by: </h6>
+                <a ng-class="{'activetab waves-effect waves-light' : predicate == 'name',  'disabled': predicate != 'name'}"
+                    ng-click="predicate = 'name'; reverse=!reverse" class="btn">Name <i
+                        ng-show="predicate == 'name' && !reverse" class="material-icons right">expand_more</i> <i
+                        ng-show="predicate == 'name' && reverse" class="material-icons right">expand_less</i></a>
+                <a ng-class="{'activetab waves-effect waves-light' : predicate == 'course',  'disabled': predicate != 'course'}"
+                    ng-click="predicate = 'course'; reverse=!reverse" class="btn">Course <a
+                        ng-class="{'activetab waves-effect waves-light' : predicate == 'yr_level',  'disabled': predicate != 'yr_level'}"
+                        ng-click="predicate = 'yr_level'; reverse=!reverse" class="btn">Year Level <i
+                            ng-show="predicate == 'phone' && !reverse" class="material-icons right">expand_more</i> <i
+                            ng-show="predicate == 'phone' && reverse" class="material-icons right">expand_less</i></a>
+                <a ng-class="{'activetab waves-effect waves-light' : predicate == 'email',  'disabled': predicate != 'email'}"
+                    ng-click="predicate = 'email'; reverse=!reverse" class="btn">Email <i
+                        ng-show="predicate == 'email' && !reverse" class="material-icons right">expand_more</i> <i
+                        ng-show="predicate == 'email' && reverse" class="material-icons right">expand_less</i></a>
+                <a ng-class="{'activetab waves-effect waves-light' : predicate == 'status',  'disabled': predicate != 'status'}"
+                    ng-click="predicate = 'status'; reverse=!reverse" class="btn">Program/Faculty <i
+                        ng-show="predicate == 'status' && !reverse" class="material-icons right">expand_more</i> <i
+                        ng-show="predicate == 'status' && reverse" class="material-icons right">expand_less</i></a>
+                <a ng-class="{'activetab waves-effect waves-light' : predicate == 'unix',  'disabled': predicate != 'unix'}"
+                    ng-click="predicate = 'unix'; reverse=!reverse" class="btn">Date Recorded <i
+                        ng-show="predicate == 'unix' && !reverse" class="material-icons right">expand_more</i> <i
+                        ng-show="predicate == 'unix' && reverse" class="material-icons right">expand_less</i></a>
+            </div>
+            <div class="divider">
+                <hr />
+            </div>
+            <dir-pagination-controls boundary-links="true" on-page-change="pageChangeHandler(newPageNumber)">
+            </dir-pagination-controls>
+            <table ng-init="loadVolunteers()" class="table hoverable bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Year Level</th>
+                        <th>Email</th>
+                        <th>Program/Faculty</th>
+                        <th>Date Recorded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr dir-paginate="d in names | filter:search | filter:filters | orderBy:predicate:reverse | itemsPerPage: resultlimit ">
+                        <td>{{ d.id }}</td>
+                        <td>{{ d.name }}</td>
+                        <td>{{ d.course }}</td>
+                        <td>{{ d.yr_level }}</td>
+                        <td class="breakEmail"><a href="mailto:{{ d.email }}?Subject=Volunteering%20at%20our%20event"
+                                target="_blank">{{ d.email }}</a></td>
+                        <td>{{ d.status }}</td>
+                        <td>{{ d.created_at | date:'MM/dd/yy h:mma' }}</td>
+                        <td>
+                            <a ng-click="readOne(d)" class="waves-effect waves-light btn customAction edit-button"><i
+                                    class="material-icons left">edit</i>Edit</a>
+                            <a ng-click="deleteVolunteer(d)"
+                                class="waves-effect waves-light btn customAction delete-button"><i
+                                    class="material-icons left">delete</i>Delete</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <dir-pagination-controls boundary-links="true" on-page-change="pageChangeHandler(newPageNumber)">
+            </dir-pagination-controls>
+            <!-- modal for creating new volunteer -->
+            <form name="volunteerForm" id="modal-volunteer-form" class="modal">
+                <div class="modal-content">
+                    <h4 id="modal-volunteer-title">Create New Information</h4>
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input name="name" ng-model="entry.name" type="text" ng-minlength="5"
+                                ng-pattern="/^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u"
+                                id="form-name" placeholder="Type name here..." required />
+                            <label for="name">Name</label>
+                        </div>
+                        <div class="input-field col s12">
+                            <input name="course" ng-model="entry.course" type="text"
+                                ng-pattern="/^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u"
+                                id="form-course" placeholder="Type course here..." required />
+                            <label for="course">Course</label>
+                        </div>
+                        <div class="input-field col s12">
+                            <input name="yr_level" ng-model="entry.yr_level" type="text"
+                                placeholder="Type year level here..." required />
+                            <label for="yr_level">YearLevel</label>
+                        </div>
+                        <div class="input-field col s12">
+                            <input ng-model="entry.email" type="email" placeholder="Type email here..." required>
+                            <label for="email">Email Address</label>
+                        </div>
+                        <div class="input-field col s12">
+                            <div style="margin-top: -10px; min-width: 150px" class="input-field col s2">
+                                <label for="status"> Program: </label><br>
+                            </div>
+                            <!-- STATUS SELECT FOR CREATE / UPDATE MODAL FORM -->
+                            <select name="status" ng-model="entry.status">
+                                <option ng-repeat="option in options" ng-selected="option.value == entry.status"
+                                    value="{{option.value}}">{{option.displayName}}</option>
+                            </select>
+                        </div>
+                        <div class="input-field col nopad s12">
+                            <a ng-class="{'disabled': volunteerForm.$invalid}" id="btn-create-volunteer"
+                                class="waves-effect waves-light btn customAction"
+                                ng-click="volunteerForm.$valid && createVolunteer(entry)"><i
+                                    class="material-icons left">add</i>Create</a>
+                            <a ng-class="{'disabled': volunteerForm.$invalid}" id="btn-update-volunteer"
+                                class="waves-effect waves-light btn customAction"
+                                ng-click="volunteerForm.$valid && updateVolunteer(entry)"><i
+                                    class="material-icons left">edit</i>Save Changes</a>
+                            <a class="modal-action modal-close waves-effect waves-light btn customAction"><i
+                                    class="material-icons left">close</i>Close</a>
+                        </div>
+                    </div>
+                </div>
+            </form> <!-- END MODAL -->
+
+            <!-- floating button for creating volunteer -->
+            <div class="fixed-action-btn" style="bottom:45px; right:24px;">
+                <a class="waves-effect waves-light btn modal-trigger btn-floating btn-large red"
+                    href="#modal-volunteer-form" ng-click="showCreateForm()"><i
+                        class="large material-icons">add</i></a>
+            </div> <!-- END BUTTON -->
+
+        </div> <!-- end col s12 -->
+        </div> <!-- end row -->
+        <!--     <p ng-init="getEmails()">Aw yea {{filters}} {{list}}</p> -->
+        </div> <!-- end container -->
+
+        <!-- include jquery -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+        <!-- material design js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
+
+        <!-- include angular js -->
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+
+    </body>
+
+    </html>
+    <!-- partial -->
+    <script src="./script.js"></script>
+
+    </body>
+
+</html>
